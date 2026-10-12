@@ -12,6 +12,7 @@ const result = db.WorkerLocations.explain("executionStats").aggregate([
       key: "location",
       distanceField: "distanceMeters",
       spherical: true,
+      maxDistance: 5000, // A2: 5 km radius, same as the Map screen
       query: { is_available: true }
     }
   },
