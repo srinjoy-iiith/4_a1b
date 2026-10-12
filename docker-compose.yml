@@ -1,0 +1,60 @@
+# One command runs everything:   docker compose up --build
+#   web  -> http://localhost:8080      api -> http://localhost:4000/api/health
+# First start takes ~1-2 min while the seeder loads 50k contracts and 500k pings.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: gigtask
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d:ro      # runs 01..06 in order on first start
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gigtask"]
+      interval: 3s
+      retries: 30
+
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]
+    volumes:
+      - ./mongo/01_collections_and_indexes.js:/docker-entrypoint-initdb.d/01_collections_and_indexes.js:ro
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 3s
+      retries: 30
+
+  seeder:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes: ["./:/app:ro"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gigtask
+      MONGO_URI: mongodb://mongo:27017
+    command: sh -c "pip install -q -r requirements.txt && python data_generation/postgres_seeder.py && python data_generation/mongo_seeder.py"
+    depends_on:
+      postgres: { condition: service_healthy }
+      mongo: { condition: service_healthy }
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/gigtask
+      MONGO_URI: mongodb://mongo:27017
+      SIMULATE_PINGS: "true"
+    ports: ["4000:4000"]
+    depends_on:
+      seeder: { condition: service_completed_successfully }
+
+  web:
+    build: ./web
+    ports: ["8080:80"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  mongodata:
