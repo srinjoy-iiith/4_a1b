@@ -9,9 +9,19 @@ GROUP BY f.id,f.name;
 CREATE UNIQUE INDEX idx_freelancer_lifetime_stats_pk
 ON freelancer_lifetime_stats(freelancer_id);
 
+-- A2 addition: Postgres does not record when a materialized view was refreshed,
+-- so the refresh procedure writes a row here. The Analytics screen shows the latest one.
+CREATE TABLE IF NOT EXISTS mv_refresh_log (
+ id BIGSERIAL PRIMARY KEY,
+ view_name TEXT NOT NULL,
+ refreshed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+INSERT INTO mv_refresh_log(view_name) VALUES ('freelancer_lifetime_stats');
+
 CREATE OR REPLACE PROCEDURE refresh_freelancer_lifetime_stats()
 LANGUAGE plpgsql AS $$
 BEGIN
  REFRESH MATERIALIZED VIEW CONCURRENTLY freelancer_lifetime_stats;
+ INSERT INTO mv_refresh_log(view_name) VALUES ('freelancer_lifetime_stats');
 END; $$;
 -- CALL refresh_freelancer_lifetime_stats();
