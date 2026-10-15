@@ -3,8 +3,8 @@
 A web front end for the **P5 GigTask** database inherited from Assignment 1. GigTask is a freelance marketplace: clients fund gigs from escrow, freelancers do them, and clients review them.
 
 - **Repository:** https://github.com/srinjoy-iiith/4_a1b
-- **Final commit hash:** &lt;FINAL_COMMIT_HASH&gt;
-- **Demo video (≤ 5 min):** &lt;DEMO_VIDEO_LINK&gt;
+- **Final commit hash:** `98ac430` (last code commit; this README update comes after it)
+- **Demo video (≤ 5 min):** https://drive.google.com/drive/folders/1tawSqgp1Uu_Ju5w6kVWBXNK0E4PA-gpW
 - **Inherited from:** <https://github.com/Akhileshsenapati1008/19_a1>. Its original README is kept at [`docs/A1_README.md`](docs/A1_README.md).
 
 | Doc | Link |
@@ -168,6 +168,6 @@ The details and reasons are in the [handover note](docs/handover_note.md).
 
 | Member | Roll no. | Design | Code |
 |---|---|---|---|
-| Srinjoy Majumdar | 2026201054 | API design (`docs/api_endpoints.md`), handover note | DB fixes (`sql/`, `mongo/`), both seeders, the whole `api/` server, Docker setup |
-| &lt;Teammate A&gt; | &lt;roll&gt; | Users, wireframes, design system | Front-end setup and shared components, Browse + detail pages, contract status changer, Fund a Gig, Escrow Audit |
-| &lt;Teammate B&gt; | &lt;roll&gt; | Analytics / Map / Reviews layout | Analytics, Nearby Workers, Reviews screens; tests; README; demo video |
+| Srinjoy Majumdar | 2026201054 | API design (`docs/api_endpoints.md`), handover note | DB fixes (`sql/`, `mongo/`), both seeders, the whole `api/` server, Docker setup, semantic fixes, screenshots, demo video, final README |
+| Chokkam Samiksha | 2026202017 | Users, wireframes, design system | Front-end setup and shared components, Browse + detail pages, contract status changer, Fund a Gig, Escrow Audit |
+| Arya Jain | 2026201051 | Analytics / Map / Reviews layout | Analytics, Nearby Workers, Reviews screens; API and UI tests |
