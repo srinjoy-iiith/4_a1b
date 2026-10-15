@@ -1,6 +1,8 @@
 // Integration tests for Workflow 1 (fund_gig) through the real API and a real, seeded Postgres.
 // Run: cd api && npm test     (needs the database running and seeded)
-// Each test picks fresh rows, and we clean up the contracts we create at the end.
+// Each test picks fresh rows. At the end, any contract a test left IN PROGRESS is moved to
+// COMPLETED so the freelancer is free again. Nothing is deleted: wallet_audit_logs is an
+// append-only ledger, so every GIG_FUNDED entry keeps its matching contract.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { app } from '../src/app.js';
@@ -15,10 +17,9 @@ before(async () => {
 });
 
 after(async () => {
-  // Undo our test data: give the money back and delete the contracts we made.
-  for (const { id, client, budget } of created) {
-    await pool.query('DELETE FROM contracts WHERE id = $1', [id]);
-    await pool.query('CALL deposit_escrow($1, $2)', [client, budget]);
+  for (const { id } of created) {
+    await pool.query(`UPDATE contracts SET status = 'COMPLETED', completed_at = NOW()
+                       WHERE id = $1 AND status = 'IN PROGRESS'`, [id]);
   }
   server.close();
   await closeAll();

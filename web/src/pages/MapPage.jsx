@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Circle, CircleMarker, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import { api, dateTime } from '../api.js';
 import { useApi } from '../useApi.js';
-import { PageHeader, Card, Stat, Button, Field } from '../components/ui.jsx';
+import { PageHeader, Card, Stat, Button, Field, Badge } from '../components/ui.jsx';
 import { DataTable } from '../components/DataTable.jsx';
 import { AsyncView, Empty } from '../components/states.jsx';
 
@@ -49,7 +49,7 @@ export default function MapPage() {
 
   return (
     <div className="stack">
-      <PageHeader title="Nearby workers" subtitle="Available freelancers within 5 km of a job site, nearest first (MongoDB $geoNear)." />
+      <PageHeader title="Nearby workers" subtitle="Freelancers whose latest location ping (marked available) is within 5 km of the job site, nearest first (MongoDB $geoNear). “busy” = already has a gig in progress." />
       <Card>
         <div className="row" style={{ alignItems: 'end' }}>
           <Field label="Job site">
@@ -104,7 +104,7 @@ export default function MapPage() {
             {d => (
               <DataTable rows={d.workers} rowKey={w => w.freelancer_id} rowClass={w => (isNew(w) ? 'highlight' : '')} columns={[
                 { key: 'rank', label: '#', render: w => d.workers.indexOf(w) + 1 },
-                { key: 'name', label: 'Freelancer', render: w => <Link to={`/freelancers/${w.freelancer_id}`}>{w.name}</Link> },
+                { key: 'name', label: 'Freelancer', render: w => <><Link to={`/freelancers/${w.freelancer_id}`}>{w.name}</Link>{w.has_active_gig && <> <Badge tone="red">busy</Badge></>}</> },
                 { key: 'distance_m', label: 'Distance', className: 'num', render: w => `${(w.distance_m / 1000).toFixed(2)} km` },
                 { key: 'pinged_at', label: 'Last ping', render: w => <span title={dateTime(w.pinged_at)}>{new Date(w.pinged_at).toLocaleTimeString()}{isNew(w) && <strong className="money-in"> new</strong>}</span> },
               ]} />

@@ -71,21 +71,28 @@ def main():
     for b in chunks(pings()):
         db.WorkerLocations.insert_many(b, ordered=False)
 
-    # Workflow 4 data: reviews for completed contracts (rating skewed towards 4-5)
+    # Each freelancer's skills, decided once so that portfolios and reviews agree.
+    skills_of = {fid: random.sample(SKILLS, random.randint(2, 6)) for fid, *_ in freelancers}
+
+    # Workflow 4 data: reviews for completed contracts (rating skewed towards 4-5).
+    # A2 fixes: a review only tags skills the freelancer actually has, and is written
+    # after the contract was completed but never in the future.
     def reviews():
         for cid, fid, done in random.sample(completed, min(REVIEWS, len(completed))):
             rating = random.choices([1, 2, 3, 4, 5], weights=[4, 6, 15, 35, 40])[0]
+            own = skills_of[fid]
+            written = min((done or now) + timedelta(hours=random.randint(1, 48)), now)
             yield {'contract_id': cid, 'freelancer_id': fid, 'rating': rating,
-                   'skill_tags': random.sample(SKILLS, random.randint(1, 4)),
+                   'skill_tags': random.sample(own, random.randint(1, min(3, len(own)))),
                    'comment': random.choice(COMMENTS[rating]),
-                   'created_at': (done or now) + timedelta(hours=random.randint(1, 48))}
+                   'created_at': written}
     for b in chunks(reviews()):
         db.GigReviews.insert_many(b, ordered=False)
 
     # Flexible catalog: one portfolio per freelancer; optional fields differ between documents
     def portfolios():
         for fid, name, *_ in freelancers:
-            skills = random.sample(SKILLS, random.randint(2, 6))
+            skills = skills_of[fid]
             doc = {'freelancer_id': fid, 'display_name': name,
                    'headline': f"{skills[0].replace('-', ' ').title()} specialist",
                    'hourly_rate_inr': random.choice([300, 500, 750, 1000, 1500, 2500]),

@@ -21,7 +21,7 @@ export default function FreelancerDetail() {
       {fr => (
         <div className="stack">
           <PageHeader title={fr.name}
-            subtitle={<>Freelancer · {fr.is_available ? <Badge tone="completed">available</Badge> : <Badge>not available</Badge>}</>}
+            subtitle={<>Freelancer · {fr.is_available ? <Badge tone="completed">open to work</Badge> : <Badge>not open to work</Badge>}</>}
             actions={<Link to={`/fund?freelancer=${fr.id}`}><Button disabled={!!fr.active_contract}>Fund a gig with {fr.name.split(' ')[0]}</Button></Link>} />
           <div className="grid grid-4">
             <Stat label="Completed gigs" value={fr.completed_contracts} hint="from materialized view" />

@@ -23,7 +23,7 @@ const COLUMNS = {
   ],
   freelancers: [
     { key: 'name', label: 'Name' },
-    { key: 'is_available', label: 'Available', render: r => (r.is_available ? <Badge tone="completed">yes</Badge> : <Badge>no</Badge>) },
+    { key: 'is_available', label: 'Open to work', render: r => (r.is_available ? <Badge tone="completed">yes</Badge> : <Badge>no</Badge>) },
     { key: 'has_active_gig', label: 'Current gig', render: r => (r.has_active_gig ? <Badge tone="progress">in progress</Badge> : <span className="muted">none</span>) },
     { key: 'completed_contracts', label: 'Completed', className: 'num' },
     { key: 'total_earnings', label: 'Lifetime earnings', className: 'num', render: r => money(r.total_earnings) },
@@ -85,7 +85,7 @@ export default function BrowsePage() {
           {tab === 'freelancers' && (
             <select className="input" value={filter} onChange={e => update({ filter: e.target.value, page: '' })} aria-label="Freelancer filter">
               <option value="">All freelancers</option>
-              <option value="available">Marked available</option>
+              <option value="available">Open to work</option>
               <option value="free">No gig in progress</option>
               <option value="busy">Gig in progress</option>
             </select>

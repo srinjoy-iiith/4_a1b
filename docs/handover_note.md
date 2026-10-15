@@ -26,6 +26,7 @@ The original A1 README is kept unchanged at [`docs/A1_README.md`](A1_README.md).
 | 7 | 100k random `wallet_audit_logs` rows with random `balance_after` | The audit trail contradicted the real balances, so a running balance was meaningless. |
 | 8 | `completed_at` could be in the future; the moving average used `created_at` | Revenue appeared on days before the work was finished. |
 | 9 | Re-running `04` on an existing DB (after our signature change) gave "procedure is not unique" | Two versions of `fund_gig` existed side by side. |
+| 10 | The 7-day moving average used `AVG()` over the rows in the window, but rows exist only for days with revenue | One ₹5,000 day in a week showed as a ₹5,000 average instead of ₹714 (5,000 ÷ 7), so rankings favoured occasional earners. |
 
 ## What we changed and why
 
@@ -38,10 +39,11 @@ All changes are also listed in the README under *Changes to inherited code*.
   - Added `INOUT p_contract_id` so the caller gets the new id, and a `DROP PROCEDURE` of the old signature (fix 9).
   - Added `update_contract_status` (FUNDED → IN PROGRESS → COMPLETED) and `deposit_escrow`.
 - **`sql/05`**: added the `mv_refresh_log` table. The refresh procedure writes to it so the UI can show "last refreshed" (Postgres does not track this itself).
-- **`sql/06`**: revenue is dated by `completed_at` (fix 8). `DENSE_RANK` now uses the rounded value, so equal displayed values share a rank.
+- **`sql/06`**: revenue is dated by `completed_at` (fix 8). The moving average is now the window's total ÷ 7, so days without revenue count as zero (fix 10). `DENSE_RANK` uses the rounded value, so equal displayed values share a rank.
 - **`sql/01`**: renamed to `01_schema_ddl.sql` (fix 3). Removed the stray `Untitled.png`.
 - **Seeders**:
-  - The Postgres seeder builds a real chronological escrow history per client (fix 7). It is checked by a test: the running balance equals the logged balance for all 101k rows.
+  - The Postgres seeder builds a real chronological escrow history per client (fix 7).
+  - The Mongo seeder makes each review tag only skills from that freelancer's portfolio, and never dates a review in the future. It is checked by a test: the running balance equals the logged balance for all 101k rows.
   - The Mongo seeder uses Postgres UUIDs and seeds reviews and portfolios (fixes 4, 5).
   - The API runs a small ping simulator so the map stays populated within the TTL window (fix 6).
 - **`mongo/01`**: re-runnable (skips existing collections) and selects the `gigtask` DB itself.

@@ -13,8 +13,9 @@ const MOVING_CTE = `
      GROUP BY freelancer_id, completed_at::date
   ), moving AS (
     SELECT freelancer_id, revenue_day, daily_revenue,
-           AVG(daily_revenue) OVER (PARTITION BY freelancer_id ORDER BY revenue_day
-                                    RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW) AS moving_avg_7d
+           -- total revenue in the 7-day window / 7 (days without revenue count as zero)
+           SUM(daily_revenue) OVER (PARTITION BY freelancer_id ORDER BY revenue_day
+                                    RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW) / 7.0 AS moving_avg_7d
       FROM daily_revenue
   )`;
 

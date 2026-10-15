@@ -33,7 +33,7 @@ export async function api(path, { method = 'GET', body, query } = {}) {
 
 // Formatting helpers used everywhere
 export const money = n => (n === null || n === undefined ? '—'
-  : '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  : (Number(n) < 0 ? '−' : '') + '₹' + Math.abs(Number(n)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 export const dateTime = d => (d ? new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—');
 export const dateOnly = d => (d ? new Date(d).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : '—');
 export const shortId = id => (id ? id.slice(0, 8) : '');

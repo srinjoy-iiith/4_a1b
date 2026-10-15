@@ -34,9 +34,11 @@ r.get('/nearby', async (req, res) => {
         spherical: true,
         query: { is_available: true },
     } },
-    // A freelancer can have many pings; keep only their nearest one.
+    // A freelancer can have many pings in the last 2 hours. Their current position is their
+    // LATEST ping, so sort newest first and keep that one ping's location, distance and time.
+    { $sort: { created_at: -1 } },
     { $group: { _id: '$freelancer_id', distanceMeters: { $first: '$distanceMeters' },
-                location: { $first: '$location' }, pinged_at: { $max: '$created_at' }, pings: { $sum: 1 } } },
+                location: { $first: '$location' }, pinged_at: { $first: '$created_at' }, pings: { $sum: 1 } } },
     { $sort: { distanceMeters: 1 } },
     { $facet: {
         workers: [{ $limit: limit }],
@@ -45,18 +47,21 @@ r.get('/nearby', async (req, res) => {
     } },
   ]).toArray();
 
-  // Add names from Postgres (Mongo only stores the freelancer UUID).
+  // Add names from Postgres (Mongo only stores the freelancer UUID), and whether the worker
+  // already has a gig IN PROGRESS (then they can't be funded until it is completed).
   const ids = result.workers.map(w => w._id);
   const { rows } = ids.length
-    ? await pool.query('SELECT id, name FROM freelancers WHERE id = ANY($1::uuid[])', [ids])
+    ? await pool.query(`SELECT f.id, f.name,
+                               EXISTS (SELECT 1 FROM contracts k WHERE k.freelancer_id = f.id AND k.status = 'IN PROGRESS') AS has_active_gig
+                          FROM freelancers f WHERE f.id = ANY($1::uuid[])`, [ids])
     : { rows: [] };
-  const names = Object.fromEntries(rows.map(x => [x.id, x.name]));
+  const byId = Object.fromEntries(rows.map(x => [x.id, x]));
 
   res.json({
     origin: { lng, lat }, radius_m: radius,
     stats: result.stats[0] ? { ...result.stats[0], _id: undefined } : { workers_in_radius: 0, pings_in_radius: 0, latest_ping: null },
     workers: result.workers.map(w => ({
-      freelancer_id: w._id, name: names[w._id] ?? 'Unknown freelancer',
+      freelancer_id: w._id, name: byId[w._id]?.name ?? 'Unknown freelancer', has_active_gig: !!byId[w._id]?.has_active_gig,
       distance_m: Math.round(w.distanceMeters), lng: w.location.coordinates[0], lat: w.location.coordinates[1],
       pinged_at: w.pinged_at, pings: w.pings,
     })),

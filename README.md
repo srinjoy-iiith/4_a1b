@@ -103,14 +103,15 @@ Screenshots: see [`docs/screenshots/`](docs/screenshots).
 
 1. **Funding a gig starts it.** `fund_gig` creates the contract as `IN PROGRESS`, so the "one active gig per freelancer" rule applies at funding time. Seeded `FUNDED` contracts can still be moved to IN PROGRESS from the contract page.
 2. Status changes only move forward (FUNDED → IN PROGRESS → COMPLETED). There is no cancel or refund flow; the assignment does not ask for one.
-3. Revenue for the moving average is dated by `completed_at`, and only COMPLETED contracts count.
+3. Revenue for the moving average is dated by `completed_at`, and only COMPLETED contracts count. The 7-day moving average for a day = total revenue in that day and the 6 days before it ÷ 7 (days without revenue count as zero).
 4. The "running balance" is recomputed from `amount_changed` with a window function. It equals the trigger's `balance_after` (a test checks this).
-5. The "nearest worker" list keeps only each freelancer's nearest ping inside the radius, and only pings marked `is_available`.
+5. A worker's position is their **latest** ping marked `is_available` inside the radius; distance, map dot and "last ping" all come from that one ping. Workers who already have a gig IN PROGRESS are shown with a "busy" badge.
 6. Location pings expire after 2 hours (A1's TTL index). The API's ping simulator inserts 25 fresh pings every 5 s so the map is never empty. Turn it off with `SIMULATE_PINGS=false`.
 7. Job-site presets are 5 well-known Hyderabad locations; any point clicked on the map also works.
 8. "Best-rated freelancers" requires at least 5 reviews, so one 5★ review does not top the list.
 9. Money is shown in ₹ with Indian digit grouping.
 10. No authentication. "Acting as" is a demo switch, as the assignment allows.
+11. `freelancers.is_available` is the freelancer's own "open to work" flag (shown as **Open to work**). "Busy" means the freelancer has a contract IN PROGRESS. The inherited `fund_gig` enforces only the busy rule (via the partial unique index); we kept that behaviour.
 
 ---
 
@@ -124,11 +125,11 @@ The details and reasons are in the [handover note](docs/handover_note.md).
 | `sql/03_triggers_and_audit.sql` | Optional action label via `app.audit_action` (`GIG_FUNDED`, `DEPOSIT`) |
 | `sql/04_stored_procedures.sql` | **Removed the invalid `ROLLBACK` in the exception block**; new gigs start `IN PROGRESS`; `INOUT p_contract_id`; drops the old signature; new `update_contract_status`, `deposit_escrow` |
 | `sql/05_materialized_views.sql` | New `mv_refresh_log` table, written by the refresh procedure |
-| `sql/06_window_analytics.sql` | Uses `completed_at`; rank on the rounded value |
+| `sql/06_window_analytics.sql` | Uses `completed_at`; **7-day average = window total ÷ 7** (A1's `AVG()` ignored days without revenue and overstated it); rank on the rounded value |
 | `mongo/01_collections_and_indexes.js` | Re-runnable; selects the `gigtask` DB |
 | `mongo/02_workflow3_geonear.js` | Added the 5 km `maxDistance` |
 | `data_generation/postgres_seeder.py` | Consistent escrow history (no random audit rows); no future `completed_at`; faster bulk inserts; refreshes the MV; skips if already seeded |
-| `data_generation/mongo_seeder.py` | Real Postgres UUIDs; seeds `GigReviews` and `Portfolios` too; skips if already seeded |
+| `data_generation/mongo_seeder.py` | Real Postgres UUIDs; seeds `GigReviews` and `Portfolios` too; review tags come from the freelancer's own portfolio skills; reviews are never dated in the future; skips if already seeded |
 | `Untitled.png` | Removed (stray file) |
 
 ---
