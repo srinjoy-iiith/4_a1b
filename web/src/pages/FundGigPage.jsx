@@ -31,6 +31,9 @@ export default function FundGigPage() {
   // Always show the client's live balance (the top-bar copy can be out of date)
   const client = useApi(() => (actor ? api(`/clients/${actor.id}`) : Promise.resolve(null)), [actor?.id]);
 
+  // A result or error describes one attempt; clear it when the client or freelancer changes
+  useEffect(() => { setResult(null); setError(null); }, [actor?.id, freelancer?.id]);
+
   // Coming from a freelancer page with ?freelancer=<id>
   useEffect(() => {
     const fid = params.get('freelancer');
